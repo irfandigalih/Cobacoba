@@ -1,76 +1,134 @@
-Vue.config.devtools = true;
-
-Vue.component('card', {
-  template: `
-    <div class="card-wrap"
-      @mousemove="handleMouseMove"
-      @mouseenter="handleMouseEnter"
-      @mouseleave="handleMouseLeave"
-      ref="card">
-      <div class="card"
-        :style="cardStyle">
-        <div class="card-bg" :style="[cardBgTransform, cardBgImage]"></div>
-        <div class="card-info">
-          <slot name="header"></slot>
-          <slot name="content"></slot>
-        </div>
-      </div>
-    </div>`,
-  mounted() {
-    this.width = this.$refs.card.offsetWidth;
-    this.height = this.$refs.card.offsetHeight;
+var products = [
+  {
+    id: 1,
+    name: "Angular",
+    description: "Superheroic JavaScript MVW Framework.",
+    price: 100
   },
-  props: ['dataImage'],
-  data: () => ({
-    width: 0,
-    height: 0,
-    mouseX: 0,
-    mouseY: 0,
-    mouseLeaveDelay: null }),
+  {
+    id: 2,
+    name: "Ember",
+    description: "A framework for creating ambitious web applications.",
+    price: 100
+  },
+  {
+    id: 3,
+    name: "React",
+    description: "A JavaScript Library for building user interfaces.",
+    price: 100
+  }
+];
 
+function findProduct(productId) {
+  return products[findProductKey(productId)];
+}
+
+function findProductKey(productId) {
+  for (var key = 0; key < products.length; key++) {
+    if (products[key].id == productId) {
+      return key;
+    }
+  }
+}
+
+var List = {
+  template: "#product-list",
+  data: function () {
+    return { products: products, searchKey: "" };
+  },
   computed: {
-    mousePX() {
-      return this.mouseX / this.width;
-    },
-    mousePY() {
-      return this.mouseY / this.height;
-    },
-    cardStyle() {
-      const rX = this.mousePX * 30;
-      const rY = this.mousePY * -30;
-      return {
-        transform: `rotateY(${rX}deg) rotateX(${rY}deg)` };
+    filteredProducts: function () {
+      return this.products.filter(function (product) {
+        return (
+          this.searchKey == "" ||
+          product.name.toLowerCase().indexOf(this.searchKey.toLowerCase()) !==
+            -1 ||
+          product.description
+            .toLowerCase()
+            .indexOf(this.searchKey.toLowerCase()) !== -1
+        );
+      }, this);
+    }
+  }
+};
 
-    },
-    cardBgTransform() {
-      const tX = this.mousePX * -40;
-      const tY = this.mousePY * -40;
-      return {
-        transform: `translateX(${tX}px) translateY(${tY}px)` };
+var Product = {
+  template: "#product",
+  data: function () {
+    return { product: findProduct(this.$route.params.product_id) };
+  }
+};
 
-    },
-    cardBgImage() {
-      return {
-        backgroundImage: `url(${this.dataImage})` };
-
-    } },
-
+var ProductEdit = {
+  template: "#product-edit",
+  data: function () {
+    return { product: findProduct(this.$route.params.product_id) };
+  },
   methods: {
-    handleMouseMove(e) {
-      this.mouseX = e.pageX - this.$refs.card.offsetLeft - this.width / 2;
-      this.mouseY = e.pageY - this.$refs.card.offsetTop - this.height / 2;
+    updateProduct: function () {
+      var product = this.product;
+      products[findProductKey(product.id)] = {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.price
+      };
+      router.push("/");
+    }
+  }
+};
+
+var ProductDelete = {
+  template: "#product-delete",
+  data: function () {
+    return { product: findProduct(this.$route.params.product_id) };
+  },
+  methods: {
+    deleteProduct: function () {
+      products.splice(findProductKey(this.$route.params.product_id), 1);
+      router.push("/");
+    }
+  }
+};
+
+var AddProduct = {
+  template: "#add-product",
+  data: function () {
+    return { product: { name: "", description: "", price: "" } };
+  },
+  methods: {
+    createProduct: function () {
+      var product = this.product;
+      products.push({
+        id: Math.random().toString().split(".")[1],
+        name: product.name,
+        description: product.description,
+        price: product.price
+      });
+      router.push("/");
+    }
+  }
+};
+
+var router = new VueRouter.createRouter({
+  history: VueRouter.createWebHashHistory(),
+  routes: [
+    { path: "/", component: List },
+    { path: "/product/:product_id", component: Product, name: "product" },
+    { path: "/add-product", component: AddProduct },
+    {
+      path: "/product/:product_id/edit",
+      component: ProductEdit,
+      name: "product-edit"
     },
-    handleMouseEnter() {
-      clearTimeout(this.mouseLeaveDelay);
-    },
-    handleMouseLeave() {
-      this.mouseLeaveDelay = setTimeout(() => {
-        this.mouseX = 0;
-        this.mouseY = 0;
-      }, 1000);
-    } } });
+    {
+      path: "/product/:product_id/delete",
+      component: ProductDelete,
+      name: "product-delete"
+    }
+  ]
+});
 
-
-
-const app = new Vue({
-  el: '#app' });
+const app = Vue.createApp({});
+app.use(router);
+app.mount("#app");
