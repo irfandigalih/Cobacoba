@@ -1,36 +1,176 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>CodePen - Parallax Depth Cards</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
-<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Playfair+Display:700|Raleway:500.700'><link rel="stylesheet" href="./style.css">
-
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Vue.js 3 CRUD application</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- load frameworks: vue + bulma + fontawesome -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/vue-router@4.0.15/dist/vue-router.global.prod.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free@6.2.0/css/all.min.css">
 </head>
-<body>
-<!-- partial:index.partial.html -->
-<h1 class="title">Hover over the cards</h1>
 
-<div id="app" class="container">
-  <card data-image="https://images.unsplash.com/photo-1479660656269-197ebb83b540?dpr=2&auto=compress,format&fit=crop&w=1199&h=798&q=80&cs=tinysrgb&crop=">
-    <h1 slot="header">Canyons</h1>
-    <p slot="content">Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
-  </card>
-  <card data-image="https://images.unsplash.com/photo-1479659929431-4342107adfc1?dpr=2&auto=compress,format&fit=crop&w=1199&h=799&q=80&cs=tinysrgb&crop=">
-    <h1 slot="header">Beaches</h1>
-    <p slot="content">Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
-  </card>
-  <card data-image="https://images.unsplash.com/photo-1479644025832-60dabb8be2a1?dpr=2&auto=compress,format&fit=crop&w=1199&h=799&q=80&cs=tinysrgb&crop=">
-    <h1 slot="header">Trees</h1>
-    <p slot="content">Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
-  </card>
-  <card data-image="https://images.unsplash.com/photo-1479621051492-5a6f9bd9e51a?dpr=2&auto=compress,format&fit=crop&w=1199&h=811&q=80&cs=tinysrgb&crop=">
-    <h1 slot="header">Lakes</h1>
-    <p slot="content">Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
-  </card>
-</div>
-<!-- partial -->
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/vue/2.0.1/vue.min.js'></script><script  src="./script.js"></script>
+<body>
+
+  <section class="section">
+    <div class="container">
+      <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="#/">
+            <img src="https://vuejs.org/images/logo.png" alt="Logo" style="max-height: 3rem;">
+          </a>
+          <a class="navbar-item is-size-2" href="#/">
+            Vue.js 3 CRUD application
+          </a>
+        </div>
+      </nav>
+      <main id="app" class="mt-4">
+        <router-view></router-view>
+      </main>
+      <footer class="footer mt-4">
+        <div class="content">
+          <p>Ported from: <a href="https://codepen.io/-a/pen/amOYGp">Vue.js CRUD application</a></p>
+        </div>
+      </footer>
+    </div>
+  </section>
+
+  <template id="product-list">
+    <div>
+      <h1 class="title">Products</h1>
+      <router-link class="button" to="/add-product">
+        <span class="icon">
+          <i class="fa-solid fa-plus"></i>
+        </span>
+        <span>Add product</span>
+      </router-link>
+      <div class="columns mt-2">
+        <div class="column is-one-fifth">
+          <div class="field">
+            <p class=" control has-icons-right">
+              <input class="input" v-model="searchKey" type="text" placeholder="Search">
+              <span class="icon is-small is-right">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+      <table class="table is-striped">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Price</th>
+            <th class="col-sm-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="product in filteredProducts">
+            <td>
+              <router-link v-bind:to="{name: 'product', params: {product_id: product.id}}">{{
+                product.name
+                }}</router-link>
+            </td>
+            <td>{{ product.description }}</td>
+            <td>
+              {{ product.price }}
+              &euro;
+            </td>
+            <td class="py-1">
+              <div class="buttons">
+                <router-link class="button is-warning is-small" v-bind:to="{name: 'product-edit', params: {product_id: product.id}}">Edit
+                </router-link>
+                <router-link class="button is-danger is-small" v-bind:to="{name: 'product-delete', params: {product_id: product.id}}">
+                  Delete
+                </router-link>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </template>
+
+  <template id="add-product">
+    <div>
+      <h1 class="title">Add new product</h1>
+      <form v-on:submit="createProduct">
+        <div class="field">
+          <label class="label" for="add-name">Name</label>
+          <input class="input" id="add-name" v-model="product.name" required />
+        </div>
+        <div class="field">
+          <label class="label" for="add-description">Description</label>
+          <input class="input" id="add-description" v-model="product.description">
+        </div>
+        <div class="field">
+          <label class="label" for="add-price">Price, &euro;</label>
+          <input type="number" class="input" id="add-price" v-model="product.price" />
+        </div>
+        <div class="buttons">
+          <button type="submit" class="button is-primary">Create</button>
+          <router-link class="button" to="/">Cancel</router-link>
+        </div>
+      </form>
+    </div>
+  </template>
+
+  <template id="product">
+    <div>
+      <h1 class="title">{{ product.name }}</h1>
+      <b>Description: </b>
+      <div>{{ product.description }}</div>
+      <b>Price:</b>
+      <div>{{ product.price }} &euro;</div>
+      <br />
+      <router-link to="/"><i class="fa-solid fa-arrow-left"></i> Back to product list</router-link>
+    </div>
+  </template>
+
+  <template id="product-edit">
+    <div>
+      <h1 class="title">Edit product</h1>
+      <form v-on:submit="updateProduct">
+        <div class="field">
+          <label class="label" for="edit-name">Name</label>
+          <input class="input" id="edit-name" v-model="product.name" required />
+        </div>
+        <div class="field">
+          <label class="label" for="edit-description">Description</label>
+          <input class="input" id="edit-description" v-model="product.description">
+        </div>
+        <div class="field">
+          <label class="label" for="edit-price">Price, &euro;</label>
+          <input type="number" class="input" id="edit-price" v-model="product.price" />
+        </div>
+        <div class="buttons">
+          <button type="submit" class="button is-primary">Save</button>
+          <router-link class="button" to="/">Cancel</router-link>
+        </div>
+      </form>
+    </div>
+  </template>
+
+  <template id="product-delete">
+    <div>
+      <h1 class="title">Delete product "{{ product.name }}"</h1>
+      <form v-on:submit="deleteProduct">
+        <div class="notification is-warning">
+          The action cannot be undone.
+        </div>
+        <div class="buttons">
+          <button type="submit" class="button is-danger">Delete</button>
+          <router-link class="button" to="/">Cancel</router-link>
+        </div>
+      </form>
+    </div>
+  </template>
 
 </body>
+
 </html>
